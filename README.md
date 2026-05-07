@@ -1,246 +1,139 @@
-# dating-signaling-game v1 — 核心算法实现
+# dating-signaling-game
 
-> v1 第一阶段：用 Python 实现信号博弈的均衡求解器。
-> 完成这一步后，我们再加 Streamlit UI。
+> Spence (1973) 信号博弈理论在恋爱场景下的可视化实现 ── 应用数学专业本科生兴趣作品
 
----
-
-## 你现在拿到了什么
-
-```
-dating-signaling-v1/
-├── equilibrium.py         # 主代码：4 个 TODO 等你实现
-├── test_equilibrium.py    # 测试用例：17 个，全部期望输出已手算
-└── README.md              # 本文件
-```
+[![Python](https://img.shields.io/badge/Python-3.9+-blue.svg)](https://www.python.org/)
+[![Streamlit](https://img.shields.io/badge/Streamlit-1.x-FF4B4B.svg)](https://streamlit.io/)
+[![License: MIT](https://img.shields.io/badge/License-MIT-green.svg)](LICENSE)
 
 ---
 
-## 今晚的目标
+## 在线访问
 
-**不是做完 v1，是做完一件事**：
+🔗 **[Streamlit Demo](待部署后填入链接)**
 
-> 把 4 个 TODO 函数写完，跑 `pytest` 看到 17 个测试全过。
-
-预估时间：**1.5 - 3 小时**（取决于你对 Python 的熟练度和卡多久）。
-
-做不完没关系，**做卡了来找我**。
+> 部署平台:Streamlit Community Cloud (国内访问可能需要科学上网)
 
 ---
 
-## 第一步：装 Python 环境
+## 项目简介
 
-如果你已经有 Python 3.9+ 的环境，跳过这步。
+本项目以 Michael Spence 1973 年提出的信号博弈理论为基础,在恋爱追求场景下演示该模型的均衡解。Spence 因这一研究于 2001 年获得诺贝尔经济学奖,其核心洞察是:**当一种行为对不同动机的人代价不同时,这种行为本身可以成为可信的信号**。
 
-### 检查你有没有 Python
+理论的原始应用是劳动力市场中的教育信号问题,但其抽象的博弈结构能解释任何「一方拥有私有信息、另一方依据可观察行为做推断」的场景。本项目以恋爱为例,演示该机制的三种均衡形式:
 
-打开命令行（macOS / Linux 是 Terminal、Windows 是 cmd 或 PowerShell），输入：
+- **分离均衡 (Separating Equilibrium)** ── 真心人通过"过度投入"使自己被识别
+- **混同均衡 (Pooling Equilibrium)** ── 高信任市场中信号失效
+- **半分离均衡 (Semi-Separating Equilibrium)** ── 即「备胎现象」的精确数学解释
+
+通过拖动参数滑块,用户可以实时观察均衡如何随条件变化,并理解几个常见的恋爱现象(如「为什么追了很久才在一起的关系往往更稳定」、「为什么对方的忽冷忽热会强化判断难度」)在博弈论框架下的精确意义。
+
+---
+
+## 功能预览
+
+> 截图待补
+
+---
+
+## 本地运行
+
+### 环境要求
+
+- Python 3.9 或更高
+- pip
+
+### 安装与启动
 
 ```bash
-python --version
+# 1. 克隆仓库
+git clone https://github.com/EddieR314/dating-signaling-game.git
+cd dating-signaling-game
+
+# 2. 安装依赖
+pip install -r requirements.txt
+
+# 3. 启动应用
+streamlit run app_v2.py
 ```
 
-或者：
+启动后浏览器自动打开 `http://localhost:8501`。
 
-```bash
-python3 --version
-```
+### 跑测试
 
-如果显示版本号 ≥ 3.9（比如 `Python 3.11.5`），✅ 通过。
-
-如果提示找不到命令，去 [python.org](https://www.python.org/downloads/) 下载安装最新版。
-
-### 装 pytest
-
-唯一需要的依赖。终端里跑：
+核心算法部分有完整的单元测试覆盖:
 
 ```bash
 pip install pytest
-```
-
-或者：
-
-```bash
-pip3 install pytest
-```
-
----
-
-## 第二步：把这三个文件放到一个文件夹
-
-随便挑个位置，比如桌面新建一个文件夹叫 `dating-signaling-v1`，把 `equilibrium.py`、`test_equilibrium.py`、`README.md` 都放进去。
-
-终端进入这个文件夹：
-
-```bash
-cd 你放文件的路径
-```
-
----
-
-## 第三步：先跑一次测试，看看初始状态
-
-```bash
 python -m pytest test_equilibrium.py -v
 ```
 
-应该看到：
-- 3 个**辅助函数测试**通过（`test_mu_star_standard`、`test_mrs_S_standard`、`test_mrs_C_standard`）—— 因为这些函数我已经实现
-- 14 个**核心算法测试**报错（`NotImplementedError`）—— 因为 4 个 TODO 还没实现
-
-**这是预期的**。看到这个状态说明环境装对了。
+预期输出:**20 passed**。
 
 ---
 
-## 第四步：按顺序填 4 个 TODO
+## 项目结构
 
-打开 `equilibrium.py`，找到 4 个标记为 `# TODO` 的函数，**按顺序**实现：
-
-### TODO 1: `check_scc`（最简单，预计 5 分钟）
-
-只要返回 `MRS_S > MRS_C`。**一行就够**。
-
-写完后跑：
-
-```bash
-python -m pytest test_equilibrium.py::test_check_scc_standard -v
-python -m pytest test_equilibrium.py::test_check_scc_violated -v
-python -m pytest test_equilibrium.py::test_check_scc_boundary -v
 ```
-
-三个都过了再继续。
-
-### TODO 2: `solve_separating`（预计 15-30 分钟）
-
-按函数文档里的步骤来：
-1. 用 `check_scc` 检查
-2. 算 `s_star = mrs_C(params)`
-3. 算各方福利
-4. 构造并返回 `SeparatingEquilibrium` 对象
-
-**Python 提示** — 怎么构造对象：
-
-```python
-return SeparatingEquilibrium(
-    s_S=s_star,
-    s_C=0.0,
-    accept_threshold=s_star,
-    welfare_AS=...,
-    welfare_AC=...,
-    welfare_B=...,
-)
+dating-signaling-game/
+├── equilibrium.py          # 均衡求解核心算法 (PBE + Cho-Kreps 精炼)
+├── test_equilibrium.py     # 单元测试 (20 个测试用例)
+├── app_v2.py               # Streamlit 可视化应用
+├── requirements.txt        # 依赖清单
+└── README.md
 ```
-
-写完跑相关测试：
-
-```bash
-python -m pytest test_equilibrium.py -k separating -v
-```
-
-### TODO 3: `solve_pooling`（预计 15 分钟）
-
-逻辑类似但更简单。**注意是严格不等式 `p0 > μ*`，不是 `>=`**。
-
-写完跑：
-
-```bash
-python -m pytest test_equilibrium.py -k pooling -v
-```
-
-### TODO 4: `solve_semi_separating`（预计 30-60 分钟，最难）
-
-按文档里的步骤来。注意：
-- 公式有点多，但都给你了，逐步代入
-- 检查 q 在 (0, 1) 之间，否则返回 None
-- 检查 r 在 (0, 1] 之间（半开半闭），否则返回 None
-
-写完跑：
-
-```bash
-python -m pytest test_equilibrium.py -k semi -v
-```
-
-### 全部通过后
-
-```bash
-python -m pytest test_equilibrium.py -v
-```
-
-应该看到 **17 passed**。✅
-
-也可以直接运行 `equilibrium.py` 看输出：
-
-```bash
-python equilibrium.py
-```
-
-会打印标准参数下的均衡求解结果。
 
 ---
 
-## 卡住了怎么办
+## 数学模型概要
 
-### "Python 报错 SyntaxError"
+设博弈双方为发送者 A (追求方) 与接收者 B (被追求方)。
 
-语法错了。常见的：
-- 忘了写冒号 `:`（Python 函数定义、if、for 都要）
-- 缩进不一致（Python 用缩进表示代码块，每层 4 空格，不要混用 Tab）
-- 括号没配对
+- **类型空间**: A 的私有类型 $t \in \{S, C\}$,先验 $P(t=S) = p_0$
+- **信号空间**: A 选择投入度 $s \in [0, +\infty)$
+- **效用**:
+  - $U_A(t, s, a) = a \cdot b(t) - c(t) \cdot s$
+  - $U_B(t, a) = a \cdot v(t)$
+- **关键假设**: Single-Crossing Condition,$c(S) < c(C)$
+- **求解方法**: 完美贝叶斯均衡 (PBE) + Cho-Kreps 直觉准则精炼
 
-### "测试失败但我觉得我写对了"
+三种均衡的存在条件:
 
-1. 看具体哪个用例失败、对比期望值和实际值
-2. 把那组参数手算一遍（参考第七块讲解）
-3. 注意**严格不等式 vs 非严格不等式**——这是最常见的错误
-
-### "我不知道怎么访问对象的字段"
-
-```python
-params = GameParams(p0=0.4, b_S=4, ...)
-print(params.p0)        # 输出 0.4，注意是点不是方括号
-print(params.b_S)       # 输出 4
-```
-
-### "我不会用 dataclass"
-
-不需要会。你只需要：
-- **读取**字段：`params.p0`
-- **构造**对象：`SeparatingEquilibrium(s_S=..., s_C=..., ...)`
-
-就这两个操作，会就够了。
-
-### "卡住超过 30 分钟"
-
-回到对话来找我。把:
-- 你卡住的具体函数
-- 测试报错的输出（复制粘贴）
-- 你当前的代码
-
-都发给我。**不要硬撑**——卡住的成本远超问问题的成本。
+| 均衡形式 | 存在条件 | 关键参数 |
+|---------|----------|---------|
+| 分离均衡 | SCC 成立 | $s^* = b(C)/c(C)$ |
+| 混同均衡 | $p_0 > \mu^*$ | $\mu^* = -v(C) / (v(S) - v(C))$ |
+| 半分离均衡 | SCC 成立 + $p_0 < \mu^*$ | $q = p_0 (1 - \mu^*) / ((1-p_0) \mu^*)$ |
 
 ---
 
-## 完成的标志
+## 路线图
 
-- 4 个 TODO 函数都实现了
-- `python -m pytest test_equilibrium.py -v` 显示 **17 passed**
-- 你能用自己的话讲清楚每个函数在做什么
-
-完成后告诉我，我们进下一步：**用 Streamlit 把这套算法包成可视化网页**。
-
----
-
-## 一些工程小提示
-
-1. **保持代码简洁** — 每个函数本质都是几行数学运算。如果你写得很长，多半是哪里搞复杂了。
-2. **不要修改 `test_equilibrium.py`** — 测试用例是你代码正确性的"裁判"。
-3. **不要修改类型定义和已实现的辅助函数** — 这些是契约。
-4. **别一次性写完 4 个再跑测试** — 一个一个写、一个一个跑测试。
-5. **报错信息是你的朋友** — Python 的报错通常会告诉你哪行有问题，认真读。
+- [x] **v1**: 单边静态信号博弈,三种均衡的判别与可视化
+- [ ] **v1.5**: 中英文双语切换
+- [ ] **v2**: 双边信号博弈 (双方均存在私有信息)
+- [ ] **v3**: 动态多期博弈 (序贯均衡)
+- [ ] **v4**: 群体演化博弈 (复制动态)
 
 ---
 
-加油 — 这一步过了，你就完成了 v1 最重要的一块。
+## 参考文献
 
-**关键提醒**: 这一步你做完之后，**整个 v1 项目数学层的工作就都结束了**。
-后面 Streamlit UI 部分会简单得多——大概只需要再花一两天。
+1. Spence, M. (1973). "Job Market Signaling." *Quarterly Journal of Economics* 87(3): 355-374.
+2. Cho, I.-K., & Kreps, D. M. (1987). "Signaling Games and Stable Equilibria." *Quarterly Journal of Economics* 102(2): 179-221.
+3. Sobel, J. (2009). "Signaling Games." In *Encyclopedia of Complexity and Systems Science*.
+4. Mas-Colell, A., Whinston, M. D., & Green, J. R. (1995). *Microeconomic Theory*, Chapter 13. Oxford University Press.
+
+---
+
+## 免责声明
+
+本项目为应用数学专业一年级本科生的兴趣作品。模型采用大量简化假设(离散两类型、一维信号、线性效用、单期博弈、完全理性),旨在演示博弈论对现实场景的解释力,**不构成任何恋爱建议**。
+
+模型的局限性详见应用内「模型局限」面板。
+
+---
+
+## 许可证
+
+MIT License
