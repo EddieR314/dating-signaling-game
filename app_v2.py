@@ -1,14 +1,5 @@
 """
-约会信号博弈可视化 — Streamlit 应用 (v2)
-
-跑这个文件:
-    streamlit run app_v2.py
-
-启动后浏览器自动打开 http://localhost:8501
-
-v2 相比 v1 的改动:
-  - 文案改为学术报告体,保留关键传播点
-  - 图表区改为三层堆叠: 双人示意图 + 三张组图 + 原图
+约会信号博弈可视化 — Streamlit 应用 (v2 修复字体)
 """
 
 import streamlit as st
@@ -17,6 +8,7 @@ import matplotlib.patches as mpatches
 from matplotlib.patches import FancyArrowPatch, Circle
 import numpy as np
 import matplotlib
+import matplotlib.font_manager as fm
 
 from equilibrium import (
     GameParams,
@@ -27,29 +19,53 @@ from equilibrium import (
     SemiSeparatingEquilibrium,
 )
 
-# ============================================================
-# 页面基础配置
-# ============================================================
-
 st.set_page_config(
     page_title="信号博弈在恋爱场景的可视化",
     page_icon="💕",
     layout="wide",
 )
 
-matplotlib.rcParams["font.sans-serif"] = [
-    "Microsoft YaHei", "SimHei", "Arial Unicode MS", "DejaVu Sans"
-]
-matplotlib.rcParams["axes.unicode_minus"] = False
+# ============================================================
+# 中文字体配置 (兼容 Linux 服务器和 Windows 本地)
+# ============================================================
+
+def setup_chinese_font():
+    """按平台优先级设置中文字体. 支持 Linux/Mac/Windows."""
+    candidate_fonts = [
+        "Noto Sans CJK SC",
+        "Noto Sans CJK JP",
+        "WenQuanYi Zen Hei",
+        "WenQuanYi Micro Hei",
+        "PingFang SC",
+        "Heiti SC",
+        "Microsoft YaHei",
+        "SimHei",
+        "Arial Unicode MS",
+        "DejaVu Sans",
+    ]
+
+    available_fonts = {f.name for f in fm.fontManager.ttflist}
+
+    chosen = None
+    for font in candidate_fonts:
+        if font in available_fonts:
+            chosen = font
+            break
+
+    if chosen:
+        matplotlib.rcParams["font.sans-serif"] = [chosen] + candidate_fonts
+    else:
+        matplotlib.rcParams["font.sans-serif"] = candidate_fonts
+
+    matplotlib.rcParams["axes.unicode_minus"] = False
+
+
+setup_chinese_font()
 
 DEFAULTS = {
     "p0": 0.40, "b_S": 4.0, "b_C": 2.0,
     "c_S": 0.5, "c_C": 1.0, "v_S": 3.0, "v_C": -2.0,
 }
-
-# ============================================================
-# 顶部
-# ============================================================
 
 st.title("信号博弈在恋爱场景的可视化")
 st.markdown("**基于 Spence (1973) 信号博弈理论的均衡解演示**")
@@ -69,10 +85,6 @@ st.markdown("""
 
 st.divider()
 
-# ============================================================
-# 侧边栏
-# ============================================================
-
 with st.sidebar:
     st.header("参数面板")
     st.caption("拖动滑块,右侧实时更新均衡分析。")
@@ -84,12 +96,7 @@ with st.sidebar:
 
     st.divider()
 
-    p0 = st.slider(
-        "对方的初始信任度",
-        min_value=0.05, max_value=0.95, step=0.05,
-        value=st.session_state.get("p0", DEFAULTS["p0"]),
-        key="p0",
-    )
+    p0 = st.slider("对方的初始信任度", 0.05, 0.95, st.session_state.get("p0", DEFAULTS["p0"]), 0.05, key="p0")
     with st.expander("说明"):
         st.markdown("""
 对应模型中的先验概率 p₀,即被追求方在观察到任何信号之前,
@@ -100,24 +107,14 @@ with st.sidebar:
 
     st.markdown("---")
 
-    b_S = st.slider(
-        "认真型从被接受获得的价值",
-        min_value=0.5, max_value=5.0, step=0.1,
-        value=st.session_state.get("b_S", DEFAULTS["b_S"]),
-        key="b_S",
-    )
+    b_S = st.slider("认真型从被接受获得的价值", 0.5, 5.0, st.session_state.get("b_S", DEFAULTS["b_S"]), 0.1, key="b_S")
     with st.expander("说明"):
         st.markdown("""
 认真型追求者(类型 S)被接受时获得的效用 b(S)。
 反映该类型对这段关系的看重程度。
 """)
 
-    b_C = st.slider(
-        "不认真型从被接受获得的价值",
-        min_value=0.5, max_value=5.0, step=0.1,
-        value=st.session_state.get("b_C", DEFAULTS["b_C"]),
-        key="b_C",
-    )
+    b_C = st.slider("不认真型从被接受获得的价值", 0.5, 5.0, st.session_state.get("b_C", DEFAULTS["b_C"]), 0.1, key="b_C")
     with st.expander("说明"):
         st.markdown("""
 不认真型追求者(类型 C)被接受时获得的效用 b(C)。
@@ -129,24 +126,14 @@ with st.sidebar:
 
     st.markdown("---")
 
-    c_S = st.slider(
-        "认真型每单位投入的痛苦感",
-        min_value=0.1, max_value=2.0, step=0.05,
-        value=st.session_state.get("c_S", DEFAULTS["c_S"]),
-        key="c_S",
-    )
+    c_S = st.slider("认真型每单位投入的痛苦感", 0.1, 2.0, st.session_state.get("c_S", DEFAULTS["c_S"]), 0.05, key="c_S")
     with st.expander("说明"):
         st.markdown("""
 认真型追求者投入单位信号(时间、金钱、心力)的主观成本 c(S)。
 取值越低,代表该类型的「投入心理代价」越小。
 """)
 
-    c_C = st.slider(
-        "不认真型每单位投入的痛苦感",
-        min_value=0.1, max_value=2.0, step=0.05,
-        value=st.session_state.get("c_C", DEFAULTS["c_C"]),
-        key="c_C",
-    )
+    c_C = st.slider("不认真型每单位投入的痛苦感", 0.1, 2.0, st.session_state.get("c_C", DEFAULTS["c_C"]), 0.05, key="c_C")
     with st.expander("说明"):
         st.markdown("""
 不认真型追求者投入单位信号的主观成本 c(C)。
@@ -161,342 +148,215 @@ c(S) 与 c(C) 的差距是 Single-Crossing Condition 的核心,
 
     st.markdown("---")
 
-    v_S = st.slider(
-        "被追求方接受「认真型」的价值",
-        min_value=0.5, max_value=5.0, step=0.1,
-        value=st.session_state.get("v_S", DEFAULTS["v_S"]),
-        key="v_S",
-    )
+    v_S = st.slider("被追求方接受「认真型」的价值", 0.5, 5.0, st.session_state.get("v_S", DEFAULTS["v_S"]), 0.1, key="v_S")
     with st.expander("说明"):
         st.markdown("""
 被追求方(B)接受认真型追求者获得的效用 v(S),为正数。
 """)
 
-    v_C = st.slider(
-        "被追求方接受「不认真型」的损失",
-        min_value=-5.0, max_value=-0.5, step=0.1,
-        value=st.session_state.get("v_C", DEFAULTS["v_C"]),
-        key="v_C",
-    )
+    v_C = st.slider("被追求方接受「不认真型」的损失", -5.0, -0.5, st.session_state.get("v_C", DEFAULTS["v_C"]), 0.1, key="v_C")
     with st.expander("说明"):
         st.markdown("""
 被追求方接受不认真型追求者所蒙受的损失 v(C),为负数。
 反映被欺骗或错误匹配的预期代价。
 """)
 
-# 求解
 params = GameParams(p0=p0, b_S=b_S, b_C=b_C, c_S=c_S, c_C=c_C, v_S=v_S, v_C=v_C)
 equilibria = solve_all(params)
 
 
-# ============================================================
-# 双人示意图(带简笔表情)
-# ============================================================
-
 def draw_face(ax, x, y, radius, mood):
-    """画一个简笔表情圆脸. mood: 'happy' / 'sad' / 'neutral'"""
-    # 脸
     face = Circle((x, y), radius, fill=True, facecolor="#FFE4B5",
                   edgecolor="black", linewidth=1.5, zorder=3)
     ax.add_patch(face)
-    # 眼睛
     eye_y = y + radius * 0.2
     eye_offset = radius * 0.3
     ax.plot([x - eye_offset], [eye_y], "ko", markersize=3, zorder=4)
     ax.plot([x + eye_offset], [eye_y], "ko", markersize=3, zorder=4)
-    # 嘴
     mouth_y = y - radius * 0.25
     mouth_w = radius * 0.4
     if mood == "happy":
-        # 笑脸: 上凸的弧
         theta = np.linspace(np.pi * 1.15, np.pi * 1.85, 30)
         mx = x + mouth_w * np.cos(theta)
         my = mouth_y + radius * 0.5 + mouth_w * np.sin(theta) * 0.6
         ax.plot(mx, my, "k-", linewidth=1.5, zorder=4)
     elif mood == "sad":
-        # 哭脸: 下凹的弧
         theta = np.linspace(np.pi * 0.15, np.pi * 0.85, 30)
         mx = x + mouth_w * np.cos(theta)
         my = mouth_y - radius * 0.3 + mouth_w * np.sin(theta) * 0.6
         ax.plot(mx, my, "k-", linewidth=1.5, zorder=4)
     else:
-        # 中性: 一条直线
         ax.plot([x - mouth_w, x + mouth_w], [mouth_y, mouth_y],
                 "k-", linewidth=1.5, zorder=4)
 
 
 def make_narrative_chart(params, equilibria):
-    """双人叙事图: 两类追求者 + 一个被追求方"""
     fig, ax = plt.subplots(figsize=(12, 5))
-
     main_eq = equilibria[0] if equilibria else None
+    pos_S = (1, 3); pos_C = (1, 1); pos_B = (5, 2)
 
-    # 三个角色的位置
-    pos_S = (1, 3)      # 认真型追求者(左上)
-    pos_C = (1, 1)      # 不认真型追求者(左下)
-    pos_B = (5, 2)      # 被追求方(右中)
-
-    # ========== 决定状态 ==========
     if isinstance(main_eq, SeparatingEquilibrium):
-        s_invest = main_eq.s_S
-        c_invest = main_eq.s_C
-        s_accepted = True   # S 投入 s_star 被接受
-        c_accepted = False  # C 投入 0 被拒绝
+        s_invest = main_eq.s_S; c_invest = main_eq.s_C
+        s_accepted = True; c_accepted = False
         scenario_title = "分离均衡 (Separating Equilibrium)"
     elif isinstance(main_eq, PoolingEquilibrium):
-        s_invest = 0
-        c_invest = 0
-        s_accepted = True
-        c_accepted = True
+        s_invest = 0; c_invest = 0
+        s_accepted = True; c_accepted = True
         scenario_title = "混同均衡 (Pooling Equilibrium)"
     elif isinstance(main_eq, SemiSeparatingEquilibrium):
-        s_invest = main_eq.s_h
-        c_invest = main_eq.s_h * main_eq.q   # 平均投入(显示伪装的部分)
-        s_accepted = True
-        c_accepted = main_eq.q > 0.5  # 简化: 概率较高则显示接受
+        s_invest = main_eq.s_h; c_invest = main_eq.s_h * main_eq.q
+        s_accepted = True; c_accepted = main_eq.q > 0.5
         scenario_title = f"半分离均衡 (q = {main_eq.q*100:.0f}% 伪装)"
     else:
-        s_invest = 0
-        c_invest = 0
-        s_accepted = False
-        c_accepted = False
+        s_invest = 0; c_invest = 0
+        s_accepted = False; c_accepted = False
         scenario_title = "无标准均衡"
 
-    # ========== 画三个角色 ==========
-    # 认真型 S
     draw_face(ax, *pos_S, 0.35, "happy" if s_accepted else "sad")
-    ax.text(pos_S[0], pos_S[1] + 0.6, "认真型追求者",
-            ha="center", fontsize=11, fontweight="bold")
-
-    # 不认真型 C
+    ax.text(pos_S[0], pos_S[1] + 0.6, "认真型追求者", ha="center", fontsize=11, fontweight="bold")
     draw_face(ax, *pos_C, 0.35, "happy" if c_accepted else "sad")
-    ax.text(pos_C[0], pos_C[1] - 0.6, "不认真型追求者",
-            ha="center", fontsize=11, fontweight="bold")
+    ax.text(pos_C[0], pos_C[1] - 0.6, "不认真型追求者", ha="center", fontsize=11, fontweight="bold")
 
-    # 被追求方 B
     if s_accepted or c_accepted:
         b_mood = "happy" if (s_accepted and not c_accepted) else "neutral"
     else:
         b_mood = "neutral"
     draw_face(ax, *pos_B, 0.4, b_mood)
-    ax.text(pos_B[0], pos_B[1] + 0.7, "被追求方",
-            ha="center", fontsize=11, fontweight="bold")
+    ax.text(pos_B[0], pos_B[1] + 0.7, "被追求方", ha="center", fontsize=11, fontweight="bold")
 
-    # ========== 画箭头(投入度) ==========
     max_invest = max(s_invest, c_invest, 0.5)
-
-    # S 类型箭头
     if s_invest > 0.01:
         width_S = 1 + 4 * (s_invest / max(max_invest, 1))
         arrow_S = FancyArrowPatch(
-            (pos_S[0] + 0.4, pos_S[1]),
-            (pos_B[0] - 0.5, pos_B[1] + 0.3),
+            (pos_S[0] + 0.4, pos_S[1]), (pos_B[0] - 0.5, pos_B[1] + 0.3),
             arrowstyle=f"-|>, head_length=0.4, head_width={width_S * 0.15}",
-            linewidth=width_S, color="steelblue", zorder=2,
-            mutation_scale=15
-        )
+            linewidth=width_S, color="steelblue", zorder=2, mutation_scale=15)
         ax.add_patch(arrow_S)
-        # 标注投入度
         ax.text((pos_S[0] + pos_B[0]) / 2, (pos_S[1] + pos_B[1] + 0.3) / 2 + 0.3,
-                f"投入 {s_invest:.2f}", ha="center", fontsize=10,
-                color="steelblue", fontweight="bold")
+                f"投入 {s_invest:.2f}", ha="center", fontsize=10, color="steelblue", fontweight="bold")
     else:
         ax.text((pos_S[0] + pos_B[0]) / 2, (pos_S[1] + pos_B[1] + 0.3) / 2 + 0.2,
-                "(无投入)", ha="center", fontsize=9,
-                color="gray", style="italic")
+                "(无投入)", ha="center", fontsize=9, color="gray", style="italic")
 
-    # C 类型箭头
     if c_invest > 0.01:
         width_C = 1 + 4 * (c_invest / max(max_invest, 1))
         arrow_C = FancyArrowPatch(
-            (pos_C[0] + 0.4, pos_C[1]),
-            (pos_B[0] - 0.5, pos_B[1] - 0.3),
+            (pos_C[0] + 0.4, pos_C[1]), (pos_B[0] - 0.5, pos_B[1] - 0.3),
             arrowstyle=f"-|>, head_length=0.4, head_width={width_C * 0.15}",
-            linewidth=width_C, color="indianred", zorder=2,
-            mutation_scale=15
-        )
+            linewidth=width_C, color="indianred", zorder=2, mutation_scale=15)
         ax.add_patch(arrow_C)
         if isinstance(main_eq, SemiSeparatingEquilibrium):
             label = f"伪装投入 {main_eq.s_h:.2f}\n(概率 {main_eq.q*100:.0f}%)"
         else:
             label = f"投入 {c_invest:.2f}"
         ax.text((pos_C[0] + pos_B[0]) / 2, (pos_C[1] + pos_B[1] - 0.3) / 2 - 0.4,
-                label, ha="center", fontsize=10,
-                color="indianred", fontweight="bold")
+                label, ha="center", fontsize=10, color="indianred", fontweight="bold")
     else:
         ax.text((pos_C[0] + pos_B[0]) / 2, (pos_C[1] + pos_B[1] - 0.3) / 2 - 0.2,
-                "(无投入)", ha="center", fontsize=9,
-                color="gray", style="italic")
+                "(无投入)", ha="center", fontsize=9, color="gray", style="italic")
 
-    # ========== B 的状态标记 ==========
     if s_accepted:
-        ax.text(pos_B[0] + 0.7, pos_B[1] + 0.3, "✓ 接受",
-                fontsize=11, color="green", fontweight="bold")
+        ax.text(pos_B[0] + 0.7, pos_B[1] + 0.3, "✓ 接受", fontsize=11, color="green", fontweight="bold")
     if not s_accepted and not c_accepted:
-        ax.text(pos_B[0] + 0.7, pos_B[1], "✗ 全部拒绝",
-                fontsize=11, color="red", fontweight="bold")
+        ax.text(pos_B[0] + 0.7, pos_B[1], "✗ 全部拒绝", fontsize=11, color="red", fontweight="bold")
     if c_accepted and not s_accepted:
-        ax.text(pos_B[0] + 0.7, pos_B[1] - 0.3, "? 接受不认真",
-                fontsize=11, color="orange", fontweight="bold")
+        ax.text(pos_B[0] + 0.7, pos_B[1] - 0.3, "? 接受不认真", fontsize=11, color="orange", fontweight="bold")
     if s_accepted and c_accepted:
-        ax.text(pos_B[0] + 0.7, pos_B[1] - 0.3, "✓ 全部接受",
-                fontsize=11, color="darkgreen", fontweight="bold")
+        ax.text(pos_B[0] + 0.7, pos_B[1] - 0.3, "✓ 全部接受", fontsize=11, color="darkgreen", fontweight="bold")
 
-    # ========== 标题 ==========
     ax.set_title(scenario_title, fontsize=13, pad=15)
-
-    ax.set_xlim(0, 8)
-    ax.set_ylim(0, 4.5)
-    ax.set_aspect("equal")
-    ax.axis("off")
-
+    ax.set_xlim(0, 8); ax.set_ylim(0, 4.5)
+    ax.set_aspect("equal"); ax.axis("off")
     return fig
 
 
-# ============================================================
-# 三张组图
-# ============================================================
-
 def make_combo_charts(params, equilibria):
-    """三张小图: 投入柱状 + 接受门槛 + 福利柱状"""
     fig, axes = plt.subplots(1, 3, figsize=(15, 4.5))
-
     main_eq = equilibria[0] if equilibria else None
 
-    # ========== 图1: 投入选择柱状图 ==========
     ax1 = axes[0]
     if isinstance(main_eq, SeparatingEquilibrium):
-        s_val = main_eq.s_S
-        c_val = main_eq.s_C
+        s_val = main_eq.s_S; c_val = main_eq.s_C
     elif isinstance(main_eq, PoolingEquilibrium):
-        s_val = main_eq.s_pooled
-        c_val = main_eq.s_pooled
+        s_val = main_eq.s_pooled; c_val = main_eq.s_pooled
     elif isinstance(main_eq, SemiSeparatingEquilibrium):
-        s_val = main_eq.s_h
-        c_val = main_eq.q * main_eq.s_h  # 期望投入
+        s_val = main_eq.s_h; c_val = main_eq.q * main_eq.s_h
     else:
-        s_val = 0
-        c_val = 0
+        s_val = 0; c_val = 0
 
     bars = ax1.bar(["认真型", "不认真型"], [s_val, c_val],
-                   color=["steelblue", "indianred"],
-                   edgecolor="black", linewidth=1)
+                   color=["steelblue", "indianred"], edgecolor="black", linewidth=1)
     ax1.set_ylabel("投入水平", fontsize=11)
     ax1.set_title("两类追求者的均衡投入", fontsize=12, pad=10)
     ax1.grid(True, alpha=0.3, axis="y")
-
     for bar, val in zip(bars, [s_val, c_val]):
-        ax1.text(bar.get_x() + bar.get_width() / 2,
-                 bar.get_height() + 0.05,
+        ax1.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + 0.05,
                  f"{val:.2f}", ha="center", fontsize=11, fontweight="bold")
+    ax1.set_ylim(0, max(s_val, c_val, 1) * 1.3)
 
-    max_y = max(s_val, c_val, 1) * 1.3
-    ax1.set_ylim(0, max_y)
-
-    # ========== 图2: 接受门槛刻度 ==========
     ax2 = axes[1]
-
     if isinstance(main_eq, SeparatingEquilibrium):
-        threshold = main_eq.accept_threshold
-        s_pos = main_eq.s_S
-        c_pos = main_eq.s_C
+        threshold = main_eq.accept_threshold; s_pos = main_eq.s_S; c_pos = main_eq.s_C
         title2 = "接受门槛与投入位置"
     elif isinstance(main_eq, PoolingEquilibrium):
-        threshold = 0
-        s_pos = 0
-        c_pos = 0
+        threshold = 0; s_pos = 0; c_pos = 0
         title2 = "接受门槛(全接受)"
     elif isinstance(main_eq, SemiSeparatingEquilibrium):
-        threshold = main_eq.s_h
-        s_pos = main_eq.s_h
-        c_pos = 0  # 主要展示选 0 那一支
+        threshold = main_eq.s_h; s_pos = main_eq.s_h; c_pos = 0
         title2 = "接受门槛与投入位置"
     else:
-        threshold = 0
-        s_pos = 0
-        c_pos = 0
+        threshold = 0; s_pos = 0; c_pos = 0
         title2 = "(均衡不存在)"
 
-    # 横向刻度尺
     max_x = max(threshold * 1.5, mrs_S(params), 3)
-    ax2.axhline(y=0.5, xmin=0.05, xmax=0.95, color="lightgray",
-                linewidth=8, zorder=1)
-
-    # 拒绝区(浅红)
+    ax2.axhline(y=0.5, xmin=0.05, xmax=0.95, color="lightgray", linewidth=8, zorder=1)
     if threshold > 0:
         ax2.axvspan(0, threshold, alpha=0.2, color="red", zorder=0)
-        ax2.text(threshold / 2, 0.85, "拒绝区", ha="center",
-                 fontsize=10, color="darkred")
-    # 接受区(浅绿)
+        ax2.text(threshold / 2, 0.85, "拒绝区", ha="center", fontsize=10, color="darkred")
     ax2.axvspan(threshold, max_x, alpha=0.2, color="green", zorder=0)
-    ax2.text((threshold + max_x) / 2, 0.85, "接受区", ha="center",
-             fontsize=10, color="darkgreen")
-
-    # 门槛线
+    ax2.text((threshold + max_x) / 2, 0.85, "接受区", ha="center", fontsize=10, color="darkgreen")
     if threshold > 0:
-        ax2.axvline(x=threshold, color="black", linewidth=2,
-                    linestyle="--", zorder=2)
+        ax2.axvline(x=threshold, color="black", linewidth=2, linestyle="--", zorder=2)
         ax2.text(threshold, 0.15, f"门槛 = {threshold:.2f}",
                  ha="center", fontsize=10, fontweight="bold")
-
-    # 标记两类型的位置
-    ax2.scatter([s_pos], [0.5], color="steelblue", s=300,
-                zorder=5, edgecolors="white", linewidth=2,
-                label=f"认真型 (s={s_pos:.2f})")
-    ax2.scatter([c_pos], [0.5], color="indianred", s=300,
-                zorder=5, edgecolors="white", linewidth=2, marker="s",
-                label=f"不认真型 (s={c_pos:.2f})")
-
-    ax2.set_xlim(-0.2, max_x)
-    ax2.set_ylim(0, 1)
-    ax2.set_xlabel("投入水平", fontsize=11)
-    ax2.set_yticks([])
+    ax2.scatter([s_pos], [0.5], color="steelblue", s=300, zorder=5,
+                edgecolors="white", linewidth=2, label=f"认真型 (s={s_pos:.2f})")
+    ax2.scatter([c_pos], [0.5], color="indianred", s=300, zorder=5,
+                edgecolors="white", linewidth=2, marker="s", label=f"不认真型 (s={c_pos:.2f})")
+    ax2.set_xlim(-0.2, max_x); ax2.set_ylim(0, 1)
+    ax2.set_xlabel("投入水平", fontsize=11); ax2.set_yticks([])
     ax2.set_title(title2, fontsize=12, pad=10)
     ax2.legend(loc="upper right", fontsize=9)
 
-    # ========== 图3: 双方福利柱状图 ==========
     ax3 = axes[2]
     if main_eq:
         welfares = [main_eq.welfare_AS, main_eq.welfare_AC, main_eq.welfare_B]
     else:
         welfares = [0, 0, 0]
-
     labels3 = ["认真型\n效用", "不认真型\n效用", "被追求方\n期望效用"]
     colors3 = ["steelblue", "indianred", "darkgreen"]
-    bars3 = ax3.bar(labels3, welfares, color=colors3,
-                    edgecolor="black", linewidth=1)
+    bars3 = ax3.bar(labels3, welfares, color=colors3, edgecolor="black", linewidth=1)
     ax3.set_ylabel("效用", fontsize=11)
     ax3.set_title("均衡下三方福利", fontsize=12, pad=10)
     ax3.grid(True, alpha=0.3, axis="y")
     ax3.axhline(y=0, color="black", linewidth=0.5)
-
     for bar, val in zip(bars3, welfares):
         y_offset = 0.1 if val >= 0 else -0.2
-        ax3.text(bar.get_x() + bar.get_width() / 2,
-                 bar.get_height() + y_offset,
+        ax3.text(bar.get_x() + bar.get_width() / 2, bar.get_height() + y_offset,
                  f"{val:.2f}", ha="center", fontsize=10, fontweight="bold")
-
     plt.tight_layout()
     return fig
 
 
-# ============================================================
-# 原图(信号 vs 接受概率,严谨版)
-# ============================================================
-
 def make_main_chart(params, equilibria):
     fig, ax = plt.subplots(figsize=(10, 5))
-
     s_max = max(mrs_S(params) * 1.2, 5)
-
     threshold_S = mrs_S(params)
     ax.axvspan(0, min(threshold_S, s_max), alpha=0.15, color="blue",
                label=f"认真型承受范围 (≤ {threshold_S:.2f})")
-
     threshold_C = mrs_C(params)
     ax.axvspan(0, min(threshold_C, s_max), alpha=0.15, color="red",
                label=f"不认真型承受范围 (≤ {threshold_C:.2f})")
-
     main_eq = equilibria[0] if equilibria else None
 
     if isinstance(main_eq, SeparatingEquilibrium):
@@ -504,17 +364,13 @@ def make_main_chart(params, equilibria):
         ax.plot([0, threshold], [0, 0], color="black", linewidth=2)
         ax.plot([threshold, threshold], [0, 1], color="black", linewidth=2,
                 linestyle="--", alpha=0.5)
-        ax.plot([threshold, s_max], [1, 1], color="black", linewidth=2,
-                label="对方的接受策略")
+        ax.plot([threshold, s_max], [1, 1], color="black", linewidth=2, label="对方的接受策略")
         ax.scatter([main_eq.s_S], [1], color="blue", s=200, zorder=5,
-                   label=f"认真型选择 (s = {main_eq.s_S:.2f})",
-                   edgecolors="white", linewidth=2)
+                   label=f"认真型选择 (s = {main_eq.s_S:.2f})", edgecolors="white", linewidth=2)
         ax.scatter([main_eq.s_C], [0], color="red", s=200, zorder=5,
-                   label=f"不认真型选择 (s = {main_eq.s_C:.2f})",
-                   edgecolors="white", linewidth=2)
+                   label=f"不认真型选择 (s = {main_eq.s_C:.2f})", edgecolors="white", linewidth=2)
     elif isinstance(main_eq, PoolingEquilibrium):
-        ax.plot([0, s_max], [1, 1], color="black", linewidth=2,
-                label="对方的接受策略 (全接受)")
+        ax.plot([0, s_max], [1, 1], color="black", linewidth=2, label="对方的接受策略 (全接受)")
         ax.scatter([0], [1], color="purple", s=300, zorder=5,
                    label="两类型都选 s = 0", edgecolors="white", linewidth=2)
     elif isinstance(main_eq, SemiSeparatingEquilibrium):
@@ -525,8 +381,7 @@ def make_main_chart(params, equilibria):
         ax.plot([threshold, s_max], [main_eq.r, main_eq.r], color="black",
                 linewidth=2, label=f"接受率 = {main_eq.r:.2f}")
         ax.scatter([main_eq.s_h], [main_eq.r], color="blue", s=200, zorder=5,
-                   label=f"认真型选择 (s = {main_eq.s_h:.2f})",
-                   edgecolors="white", linewidth=2)
+                   label=f"认真型选择 (s = {main_eq.s_h:.2f})", edgecolors="white", linewidth=2)
         ax.scatter([0], [0], color="red", s=150, zorder=5, alpha=0.5,
                    label=f"不认真型: {(1-main_eq.q)*100:.0f}% 选 0",
                    edgecolors="white", linewidth=2)
@@ -537,17 +392,11 @@ def make_main_chart(params, equilibria):
 
     ax.set_xlabel("投入度 s", fontsize=12)
     ax.set_ylabel("接受概率", fontsize=12)
-    ax.set_xlim(-0.2, s_max)
-    ax.set_ylim(-0.1, 1.2)
+    ax.set_xlim(-0.2, s_max); ax.set_ylim(-0.1, 1.2)
     ax.legend(loc="center right", fontsize=9)
     ax.grid(True, alpha=0.3)
-
     return fig
 
-
-# ============================================================
-# 主显示区: 均衡分类与解读
-# ============================================================
 
 def render_separating(eq):
     st.markdown("### 分离均衡 (Separating Equilibrium)")
@@ -555,7 +404,6 @@ def render_separating(eq):
     col1.metric("认真型最优投入度", f"{eq.s_S:.2f}")
     col2.metric("不认真型最优投入度", f"{eq.s_C:.2f}")
     col3.metric("接受门槛", f"{eq.accept_threshold:.2f}")
-
     st.markdown(f"""
 当前参数下,博弈达到分离均衡。
 
@@ -570,7 +418,6 @@ def render_separating(eq):
 其中的「很久」并非时间的浪费,而是博弈论意义上必要的信号成本——
 它使真心得以被识别。
 """)
-
     with st.expander("均衡福利"):
         st.markdown(f"""
 - 认真型追求者效用:{eq.welfare_AS:.2f}
@@ -584,7 +431,6 @@ def render_pooling(eq):
     col1, col2 = st.columns(2)
     col1.metric("共同投入度", f"{eq.s_pooled:.2f}")
     col2.metric("接受率", "100%")
-
     st.markdown("""
 当前参数下,博弈达到混同均衡。
 
@@ -599,7 +445,6 @@ def render_pooling(eq):
 当市场扩大、陌生人比例上升,先验信任度 p₀ 下降,这一均衡将不再成立,
 并被分离均衡或半分离均衡取代。
 """)
-
     with st.expander("均衡福利"):
         st.markdown(f"""
 - 认真型追求者效用:{eq.welfare_AS:.2f}(被接受,零投入)
@@ -614,7 +459,6 @@ def render_semi_separating(eq):
     col1.metric("认真型投入度", f"{eq.s_h:.2f}")
     col2.metric("不认真型伪装率", f"{eq.q*100:.1f}%")
     col3.metric("被追求方接受率", f"{eq.r*100:.1f}%")
-
     st.markdown(f"""
 当前参数下,博弈达到半分离均衡。
 
@@ -633,7 +477,6 @@ def render_semi_separating(eq):
 要消除此现象,需提高先验信任度 p₀ 至 μ* 以上,
 或拉大两类型的成本差距 c(C) - c(S),使伪装的代价显著高于收益。
 """)
-
     with st.expander("均衡福利"):
         st.markdown(f"""
 - 认真型追求者效用:{eq.welfare_AS:.2f}
@@ -641,10 +484,6 @@ def render_semi_separating(eq):
 - 被追求方期望效用:{eq.welfare_B:.2f}
 """)
 
-
-# ============================================================
-# 主显示
-# ============================================================
 
 if not equilibria:
     st.markdown("### 当前参数下,标准均衡形式不存在")
@@ -679,29 +518,21 @@ else:
             render_semi_separating(eq)
         st.markdown("---")
 
-# ============================================================
-# 图表区: 三层堆叠
-# ============================================================
-
 st.divider()
 st.subheader("均衡可视化")
 
-# 第一层: 双人示意图
 st.markdown("#### 博弈结构示意")
 fig1 = make_narrative_chart(params, equilibria)
 st.pyplot(fig1, use_container_width=True)
-
 st.caption("""
 图示当前均衡下三方的策略与状态。箭头粗细表示投入水平,
 表情表示该角色在均衡结果中的得失状态。
 """)
 
-# 第二层: 三张组图
 st.markdown("#### 关键指标")
 fig2 = make_combo_charts(params, equilibria)
 st.pyplot(fig2, use_container_width=True)
 
-# 第三层: 原图(默认折叠)
 with st.expander("严谨版图表: 信号 vs 接受概率"):
     st.markdown("""
 此图展示信号(投入度)与接受概率的关系,以及两类型的承受范围。
@@ -714,10 +545,6 @@ with st.expander("严谨版图表: 信号 vs 接受概率"):
 - 黑线表示被追求方的接受策略
 - 圆点位置反映均衡下各类型的实际选择
 """)
-
-# ============================================================
-# 折叠面板: 项目背景与数学
-# ============================================================
 
 st.divider()
 
@@ -759,7 +586,6 @@ with st.expander("数学背景"):
 - 混同均衡:$s = 0$,存在条件 $p_0 > \mu^* = -v(C) / (v(S) - v(C))$
 - 半分离均衡:$S$ 选 $s_h$、$C$ 以概率 $q$ 模仿,存在条件 $p_0 < \mu^*$ + SCC
 """)
-
     st.markdown("**当前参数下的关键值:**")
     col1, col2, col3 = st.columns(3)
     col1.metric("μ* (接受阈值)", f"{mu_star(params):.4f}")
@@ -795,10 +621,6 @@ with st.expander("参考文献"):
    *Microeconomic Theory*, Chapter 13. Oxford University Press.
 """)
 
-# ============================================================
-# 页脚
-# ============================================================
-
 st.divider()
 
 st.caption("""
@@ -815,5 +637,5 @@ st.markdown("""
 *本项目为应用数学专业一年级本科生的兴趣作品。模型为简化建模,
 旨在演示博弈论对现实场景的解释力,不构成任何恋爱建议。*
 
-*源代码与详细数学推导:[GitHub 链接(待填)]*
+*源代码:[GitHub](https://github.com/EddieR314/dating-signaling-game)*
 """)
