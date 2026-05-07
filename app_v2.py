@@ -31,6 +31,8 @@ st.set_page_config(
 
 def setup_chinese_font():
     """按平台优先级设置中文字体. 支持 Linux/Mac/Windows."""
+    # 强制重载字体缓存,确保新装的系统字体能被识别
+    fm.fontManager.__init__()
     candidate_fonts = [
         "Noto Sans CJK SC",
         "Noto Sans CJK JP",
