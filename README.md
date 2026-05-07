@@ -10,7 +10,7 @@
 
 ## 在线访问
 
-🔗 **[Streamlit Demo](待部署后填入链接)**
+🔗 **[Streamlit Demo](https://dating-signaling-game-d86otzuv8fea3revx5wcds.streamlit.app/)**
 
 > 部署平台:Streamlit Community Cloud (国内访问可能需要科学上网)
 
