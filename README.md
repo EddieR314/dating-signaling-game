@@ -32,7 +32,7 @@
 
 ## 功能预览
 
-> 截图待补
+![应用预览](screenshots/preview.png)
 
 ---
 
